@@ -2,7 +2,7 @@
 
 Ported from Rust library [slabmap](https://github.com/frozenlib/slabmap)
 
-# Examples
+## Examples
 
 ```golang
 import "github.com/pourplusquoi/slabmap"
