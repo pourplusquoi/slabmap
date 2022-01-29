@@ -130,7 +130,7 @@ func (m *SlabMap) Remove(key int) (value interface{}, removed bool) {
 	}
 	m.len--
 	if isLast {
-		m.entries = m.entries[0:m.len]
+		m.entries = m.entries[0 : len(m.entries)-1]
 	} else {
 		m.entries[key] = vacantTail(m.nextVacantIdx)
 		m.nextVacantIdx = key
