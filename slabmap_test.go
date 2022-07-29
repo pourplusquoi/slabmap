@@ -8,7 +8,7 @@ import (
 )
 
 func TestSlabMap_Basics(t *testing.T) {
-	slab := slabmap.NewSlabMap()
+	slab := slabmap.NewSlabMap[string]()
 	assert.Equal(t, 0, slab.Len())
 	assert.Equal(t, 0, slab.Capacity())
 
@@ -55,7 +55,7 @@ func TestSlabMap_Basics(t *testing.T) {
 }
 
 func TestSlabMap_Compaction(t *testing.T) {
-	slab := slabmap.NewSlabMap()
+	slab := slabmap.NewSlabMap[int]()
 
 	keys := make([]int, 0)
 	for i := 0; i < 100; i++ {

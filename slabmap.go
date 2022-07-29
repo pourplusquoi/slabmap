@@ -1,7 +1,7 @@
 package slabmap
 
-type SlabMap struct {
-	entries       []*entry
+type SlabMap[T any] struct {
+	entries       []*entry[T]
 	nextVacantIdx int
 	len           int
 	nonOptimized  int
@@ -18,68 +18,68 @@ const (
 	entryTagVacantTail
 )
 
-type entry struct {
+type entry[T any] struct {
 	tag           entryTag
-	value         interface{}
+	value         T
 	vacantBodyLen int
 	nextVacantIdx int
 }
 
-func (e *entry) isOccupied() bool {
+func (e *entry[T]) isOccupied() bool {
 	return e.tag == entryTagOccupied
 }
 
-func occupied(value interface{}) *entry {
-	return &entry{
+func occupied[T any](value T) *entry[T] {
+	return &entry[T]{
 		tag:   entryTagOccupied,
 		value: value,
 	}
 }
 
-func vacantHead(vacantBodyLen int) *entry {
-	return &entry{
+func vacantHead[T any](vacantBodyLen int) *entry[T] {
+	return &entry[T]{
 		tag:           entryTagVacantHead,
 		vacantBodyLen: vacantBodyLen,
 	}
 }
 
-func vacantTail(nextVacantIdx int) *entry {
-	return &entry{
+func vacantTail[T any](nextVacantIdx int) *entry[T] {
+	return &entry[T]{
 		tag:           entryTagVacantTail,
 		nextVacantIdx: nextVacantIdx,
 	}
 }
 
-func NewSlabMap() *SlabMap {
-	return NewSlabMapWithCapacity(0)
+func NewSlabMap[T any]() *SlabMap[T] {
+	return NewSlabMapWithCapacity[T](0)
 }
 
-func NewSlabMapWithCapacity(capacity int) *SlabMap {
-	return &SlabMap{
-		entries:       make([]*entry, 0, capacity),
+func NewSlabMapWithCapacity[T any](capacity int) *SlabMap[T] {
+	return &SlabMap[T]{
+		entries:       make([]*entry[T], 0, capacity),
 		nextVacantIdx: invalidIndex,
 		len:           0,
 		nonOptimized:  0,
 	}
 }
 
-func (m *SlabMap) Capacity() int {
+func (m *SlabMap[T]) Capacity() int {
 	return cap(m.entries)
 }
 
-func (m *SlabMap) Reserve(additional int) {
-	entries := make([]*entry, 0, len(m.entries)+m.entriesAdditional(additional))
+func (m *SlabMap[T]) Reserve(additional int) {
+	entries := make([]*entry[T], 0, len(m.entries)+m.entriesAdditional(additional))
 	for _, entry := range m.entries {
 		entries = append(entries, entry)
 	}
 	m.entries = entries
 }
 
-func (m *SlabMap) Len() int {
+func (m *SlabMap[T]) Len() int {
 	return m.len
 }
 
-func (m *SlabMap) Get(key int) (value interface{}, exists bool) {
+func (m *SlabMap[T]) Get(key int) (value interface{}, exists bool) {
 	entry := m.entries[key]
 	if entry.isOccupied() {
 		return entry.value, true
@@ -87,16 +87,16 @@ func (m *SlabMap) Get(key int) (value interface{}, exists bool) {
 	return nil, false
 }
 
-func (m *SlabMap) Contains(key int) bool {
+func (m *SlabMap[T]) Contains(key int) bool {
 	_, exists := m.Get(key)
 	return exists
 }
 
-func (m *SlabMap) Insert(value interface{}) int {
-	return m.InsertWithKey(func(int) interface{} { return value })
+func (m *SlabMap[T]) Insert(value T) int {
+	return m.InsertWithKey(func(int) T { return value })
 }
 
-func (m *SlabMap) InsertWithKey(f func(int) interface{}) int {
+func (m *SlabMap[T]) InsertWithKey(f func(int) T) int {
 	var idx int
 	if m.nextVacantIdx < len(m.entries) {
 		idx = m.nextVacantIdx
@@ -104,7 +104,7 @@ func (m *SlabMap) InsertWithKey(f func(int) interface{}) int {
 		switch current.tag {
 		case entryTagVacantHead:
 			if current.vacantBodyLen > 0 {
-				m.entries[idx+1] = vacantHead(current.vacantBodyLen - 1)
+				m.entries[idx+1] = vacantHead[T](current.vacantBodyLen - 1)
 			}
 			m.nextVacantIdx = idx + 1
 		case entryTagVacantTail:
@@ -122,7 +122,7 @@ func (m *SlabMap) InsertWithKey(f func(int) interface{}) int {
 	return idx
 }
 
-func (m *SlabMap) Remove(key int) (value interface{}, removed bool) {
+func (m *SlabMap[T]) Remove(key int) (value interface{}, removed bool) {
 	isLast := (key+1 == len(m.entries))
 	current := m.entries[key]
 	if !current.isOccupied() {
@@ -132,7 +132,7 @@ func (m *SlabMap) Remove(key int) (value interface{}, removed bool) {
 	if isLast {
 		m.entries = m.entries[0 : len(m.entries)-1]
 	} else {
-		m.entries[key] = vacantTail(m.nextVacantIdx)
+		m.entries[key] = vacantTail[T](m.nextVacantIdx)
 		m.nextVacantIdx = key
 		m.nonOptimized++
 	}
@@ -142,7 +142,7 @@ func (m *SlabMap) Remove(key int) (value interface{}, removed bool) {
 	return current.value, true
 }
 
-func (m *SlabMap) Clear() {
+func (m *SlabMap[T]) Clear() {
 	for i := 0; i < len(m.entries); i++ {
 		m.entries[i] = nil
 	}
@@ -151,7 +151,7 @@ func (m *SlabMap) Clear() {
 	m.nonOptimized = 0
 }
 
-func (m *SlabMap) Retain(f func(int, interface{}) bool) {
+func (m *SlabMap[T]) Retain(f func(int, interface{}) bool) {
 	idxVacantStart := 0
 	m.nextVacantIdx = invalidIndex
 	for idx := 0; idx < len(m.entries); {
@@ -175,13 +175,13 @@ func (m *SlabMap) Retain(f func(int, interface{}) bool) {
 	m.nonOptimized = 0
 }
 
-func (m *SlabMap) Optimize() {
+func (m *SlabMap[T]) Optimize() {
 	if !m.isOptimized() {
 		m.Retain(func(int, interface{}) bool { return true })
 	}
 }
 
-func (m *SlabMap) Range(f func(int, interface{}) bool) {
+func (m *SlabMap[T]) Range(f func(int, interface{}) bool) {
 	for idx := 0; idx < len(m.entries); idx++ {
 		current := m.entries[idx]
 		if !current.isOccupied() {
@@ -193,20 +193,20 @@ func (m *SlabMap) Range(f func(int, interface{}) bool) {
 	}
 }
 
-func (m *SlabMap) entriesAdditional(additional int) int {
+func (m *SlabMap[T]) entriesAdditional(additional int) int {
 	return saturatingSub(additional, len(m.entries)-m.len, 0)
 }
 
-func (m *SlabMap) isOptimized() bool {
+func (m *SlabMap[T]) isOptimized() bool {
 	return m.nonOptimized == 0
 }
 
-func (m *SlabMap) mergeVacant(start, end int) {
+func (m *SlabMap[T]) mergeVacant(start, end int) {
 	if start < end {
 		if start < end-1 {
-			m.entries[start] = vacantHead(end - start - 2)
+			m.entries[start] = vacantHead[T](end - start - 2)
 		}
-		m.entries[end-1] = vacantTail(m.nextVacantIdx)
+		m.entries[end-1] = vacantTail[T](m.nextVacantIdx)
 		m.nextVacantIdx = start
 	}
 }
