@@ -30,8 +30,8 @@ func TestSlabMap_Basics(t *testing.T) {
 	assert.Equal(t, true, slab.Contains(key1))
 	assert.Equal(t, true, slab.Contains(key2))
 
-	values := make([]interface{}, 0)
-	slab.Range(func(_ int, value interface{}) bool {
+	values := make([]string, 0)
+	slab.Range(func(_ int, value string) bool {
 		values = append(values, value)
 		return true
 	})
@@ -45,7 +45,7 @@ func TestSlabMap_Basics(t *testing.T) {
 	assert.Equal(t, true, removed1)
 	assert.Equal(t, false, removed2)
 	assert.Equal(t, "aaa", value1)
-	assert.Equal(t, nil, value2)
+	assert.Equal(t, "", value2)
 	assert.Equal(t, false, slab.Contains(key1))
 	assert.Equal(t, true, slab.Contains(key2))
 
@@ -66,7 +66,7 @@ func TestSlabMap_Compaction(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		value, exists := slab.Remove(keys[i])
 		assert.Equal(t, true, exists)
-		assert.Equal(t, i, value.(int))
+		assert.Equal(t, i, value)
 	}
 	slab.Reserve(1024)
 	slab.Optimize()
@@ -75,7 +75,7 @@ func TestSlabMap_Compaction(t *testing.T) {
 	assert.Greater(t, slab.Capacity(), 1024)
 
 	count := 0
-	slab.Range(func(int, interface{}) bool {
+	slab.Range(func(int, int) bool {
 		count++
 		return true
 	})
@@ -89,7 +89,7 @@ func TestSlabMap_Compaction(t *testing.T) {
 	for i := 50; i < 100; i++ {
 		value, exists := slab.Remove(keys[i])
 		assert.Equal(t, true, exists)
-		assert.Equal(t, i, value.(int))
+		assert.Equal(t, i, value)
 	}
 	slab.Reserve(2048)
 	slab.Optimize()

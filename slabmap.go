@@ -79,12 +79,12 @@ func (m *SlabMap[T]) Len() int {
 	return m.len
 }
 
-func (m *SlabMap[T]) Get(key int) (value interface{}, exists bool) {
+func (m *SlabMap[T]) Get(key int) (value T, exists bool) {
 	entry := m.entries[key]
 	if entry.isOccupied() {
 		return entry.value, true
 	}
-	return nil, false
+	return value, false
 }
 
 func (m *SlabMap[T]) Contains(key int) bool {
@@ -122,11 +122,11 @@ func (m *SlabMap[T]) InsertWithKey(f func(int) T) int {
 	return idx
 }
 
-func (m *SlabMap[T]) Remove(key int) (value interface{}, removed bool) {
+func (m *SlabMap[T]) Remove(key int) (value T, removed bool) {
 	isLast := (key+1 == len(m.entries))
 	current := m.entries[key]
 	if !current.isOccupied() {
-		return nil, false
+		return value, false
 	}
 	m.len--
 	if isLast {
@@ -151,7 +151,7 @@ func (m *SlabMap[T]) Clear() {
 	m.nonOptimized = 0
 }
 
-func (m *SlabMap[T]) Retain(f func(int, interface{}) bool) {
+func (m *SlabMap[T]) Retain(f func(int, T) bool) {
 	idxVacantStart := 0
 	m.nextVacantIdx = invalidIndex
 	for idx := 0; idx < len(m.entries); {
@@ -177,11 +177,11 @@ func (m *SlabMap[T]) Retain(f func(int, interface{}) bool) {
 
 func (m *SlabMap[T]) Optimize() {
 	if !m.isOptimized() {
-		m.Retain(func(int, interface{}) bool { return true })
+		m.Retain(func(int, T) bool { return true })
 	}
 }
 
-func (m *SlabMap[T]) Range(f func(int, interface{}) bool) {
+func (m *SlabMap[T]) Range(f func(int, T) bool) {
 	for idx := 0; idx < len(m.entries); idx++ {
 		current := m.entries[idx]
 		if !current.isOccupied() {
