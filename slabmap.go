@@ -80,6 +80,9 @@ func (m *SlabMap[T]) Len() int {
 }
 
 func (m *SlabMap[T]) Get(key int) (value T, exists bool) {
+	if key < 0 || key >= len(m.entries) {
+		return value, false
+	}
 	entry := m.entries[key]
 	if entry.isOccupied() {
 		return entry.value, true
@@ -123,6 +126,9 @@ func (m *SlabMap[T]) InsertWithKey(f func(int) T) int {
 }
 
 func (m *SlabMap[T]) Remove(key int) (value T, removed bool) {
+	if key < 0 || key >= len(m.entries) {
+		return value, false
+	}
 	isLast := (key+1 == len(m.entries))
 	current := m.entries[key]
 	if !current.isOccupied() {

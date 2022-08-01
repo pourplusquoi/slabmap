@@ -23,12 +23,16 @@ func TestSlabMap_Basics(t *testing.T) {
 
 	value1, exists1 := slab.Get(key1)
 	value2, exists2 := slab.Get(key2)
+	value3, exists3 := slab.Get(999)
 	assert.Equal(t, true, exists1)
 	assert.Equal(t, true, exists2)
+	assert.Equal(t, false, exists3)
 	assert.Equal(t, "aaa", value1)
 	assert.Equal(t, "bbb", value2)
+	assert.Equal(t, "", value3)
 	assert.Equal(t, true, slab.Contains(key1))
 	assert.Equal(t, true, slab.Contains(key2))
+	assert.Equal(t, false, slab.Contains(999))
 
 	values := make([]string, 0)
 	slab.Range(func(_ int, value string) bool {
@@ -41,13 +45,17 @@ func TestSlabMap_Basics(t *testing.T) {
 
 	value1, removed1 := slab.Remove(key1)
 	value2, removed2 := slab.Remove(key1)
+	value3, removed3 := slab.Remove(999)
 	assert.Equal(t, 1, slab.Len())
 	assert.Equal(t, true, removed1)
 	assert.Equal(t, false, removed2)
+	assert.Equal(t, false, removed3)
 	assert.Equal(t, "aaa", value1)
 	assert.Equal(t, "", value2)
+	assert.Equal(t, "", value3)
 	assert.Equal(t, false, slab.Contains(key1))
 	assert.Equal(t, true, slab.Contains(key2))
+	assert.Equal(t, false, slab.Contains(999))
 
 	slab.Clear()
 	assert.Equal(t, 0, slab.Len())
