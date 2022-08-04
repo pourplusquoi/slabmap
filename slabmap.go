@@ -172,6 +172,10 @@ func (m *SlabMap[T]) Retain(f func(int, T) bool) {
 				m.mergeVacant(idxVacantStart, idx)
 				idx++
 				idxVacantStart = idx
+			} else {
+				current.tag = entryTagVacantTail
+				current.nextVacantIdx = invalidIndex
+				idx++
 			}
 		default:
 			// unreachable
